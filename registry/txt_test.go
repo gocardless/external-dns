@@ -1454,6 +1454,78 @@ func TestToEndpointNameNewTXT(t *testing.T) {
 	}
 }
 
+func TestToEndpointNameWithReplacementsNewTXT(t *testing.T) {
+	wildcardApexReplacer := newNameReplacer("wc", "apex", []string{"example.com"})
+
+	tests := []struct {
+		name        string
+		mapper      affixNameMapper
+		domain      string
+		finalDomain string
+		txtDomain   string
+		recordType  string
+	}{
+		{
+			name:        "wildcard",
+			mapper:      newaffixNameMapper("", "", wildcardApexReplacer),
+			domain:      "*.example.com",
+			finalDomain: "wc.example.com",
+			recordType:  "A",
+			txtDomain:   "a-wc.example.com",
+		},
+		{
+			name:        "wildcard with prefix",
+			mapper:      newaffixNameMapper("foo", "", wildcardApexReplacer),
+			domain:      "*.example.com",
+			finalDomain: "wc.example.com",
+			recordType:  "A",
+			txtDomain:   "fooa-wc.example.com",
+		},
+		{
+			name:        "wildcard with suffix",
+			mapper:      newaffixNameMapper("", "foo", wildcardApexReplacer),
+			domain:      "*.example.com",
+			finalDomain: "wc.example.com",
+			recordType:  "A",
+			txtDomain:   "a-wcfoo.example.com",
+		},
+		{
+			name:        "apex",
+			mapper:      newaffixNameMapper("", "", wildcardApexReplacer),
+			domain:      "example.com",
+			finalDomain: "apex.example.com",
+			recordType:  "A",
+			txtDomain:   "a-apex.example.com",
+		},
+		{
+			name:        "apex with prefix",
+			mapper:      newaffixNameMapper("foo", "", wildcardApexReplacer),
+			domain:      "example.com",
+			finalDomain: "apex.example.com",
+			recordType:  "A",
+			txtDomain:   "fooa-apex.example.com",
+		},
+		{
+			name:        "apex with suffix",
+			mapper:      newaffixNameMapper("", "foo", wildcardApexReplacer),
+			domain:      "example.com",
+			finalDomain: "apex.example.com",
+			recordType:  "A",
+			txtDomain:   "a-apexfoo.example.com",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			txtDomain := tc.mapper.toTXTName(tc.domain, tc.recordType)
+			assert.Equal(t, tc.txtDomain, txtDomain)
+
+			domain, _ := tc.mapper.toEndpointName(txtDomain)
+			assert.Equal(t, tc.finalDomain, domain)
+		})
+	}
+}
+
 func TestNewTXTScheme(t *testing.T) {
 	p := inmemory.NewInMemoryProvider()
 	p.CreateZone(testZone)
