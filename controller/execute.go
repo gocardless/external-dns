@@ -404,6 +404,15 @@ func configureLogger(cfg *externaldns.Config) {
 func selectRegistry(cfg *externaldns.Config, p provider.Provider) (registry.Registry, error) {
 	var r registry.Registry
 	var err error
+
+	var apexDomains []string
+	// DomainFilter is fallback for TXTApexDomain
+	if len(cfg.TXTApexDomain) > 0 {
+		apexDomains = cfg.TXTApexDomain
+	} else {
+		apexDomains = cfg.DomainFilter
+	}
+
 	switch cfg.Registry {
 	case "dynamodb":
 		var dynamodbOpts []func(*dynamodb.Options)
@@ -415,12 +424,12 @@ func selectRegistry(cfg *externaldns.Config, p provider.Provider) (registry.Regi
 			}
 		}
 		// TODO: apex domain list, instead of just domain filter list
-		r, err = registry.NewDynamoDBRegistry(p, cfg.TXTOwnerID, dynamodb.NewFromConfig(aws.CreateDefaultV2Config(cfg), dynamodbOpts...), cfg.AWSDynamoDBTable, cfg.TXTPrefix, cfg.TXTSuffix, cfg.TXTWildcardReplacement, cfg.TXTApexReplacement, cfg.DomainFilter, cfg.ManagedDNSRecordTypes, cfg.ExcludeDNSRecordTypes, []byte(cfg.TXTEncryptAESKey), cfg.TXTCacheInterval)
+		r, err = registry.NewDynamoDBRegistry(p, cfg.TXTOwnerID, dynamodb.NewFromConfig(aws.CreateDefaultV2Config(cfg), dynamodbOpts...), cfg.AWSDynamoDBTable, cfg.TXTPrefix, cfg.TXTSuffix, cfg.TXTWildcardReplacement, cfg.TXTApexReplacement, apexDomains, cfg.ManagedDNSRecordTypes, cfg.ExcludeDNSRecordTypes, []byte(cfg.TXTEncryptAESKey), cfg.TXTCacheInterval)
 	case "noop":
 		r, err = registry.NewNoopRegistry(p)
 	case "txt":
 		// TODO: apex domain list, instead of just domain filter list
-		r, err = registry.NewTXTRegistry(p, cfg.TXTPrefix, cfg.TXTSuffix, cfg.TXTOwnerID, cfg.TXTCacheInterval, cfg.TXTWildcardReplacement, cfg.TXTApexReplacement, cfg.DomainFilter, cfg.ManagedDNSRecordTypes, cfg.ExcludeDNSRecordTypes, cfg.TXTEncryptEnabled, []byte(cfg.TXTEncryptAESKey))
+		r, err = registry.NewTXTRegistry(p, cfg.TXTPrefix, cfg.TXTSuffix, cfg.TXTOwnerID, cfg.TXTCacheInterval, cfg.TXTWildcardReplacement, cfg.TXTApexReplacement, apexDomains, cfg.ManagedDNSRecordTypes, cfg.ExcludeDNSRecordTypes, cfg.TXTEncryptEnabled, []byte(cfg.TXTEncryptAESKey))
 	case "aws-sd":
 		r, err = registry.NewAWSSDRegistry(p, cfg.TXTOwnerID)
 	default:
