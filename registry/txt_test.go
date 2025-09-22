@@ -2113,3 +2113,96 @@ func TestTXTRegistryRecreatesMissingRecords(t *testing.T) {
 		}
 	}
 }
+
+func TestNameReplacer(t *testing.T) {
+	testInputs := []string{
+		"example.com",
+		"foo.com",
+		"foo.example.com",
+		"*.example.com",
+		"*.foo.com",
+	}
+	tests := []struct {
+		name                string
+		wildcardReplacement string
+		apexReplacement     string
+		apexDomains         []string
+		inputs              []string
+		outputs             []string
+	}{
+		{
+			name:                "wildcard and apex",
+			wildcardReplacement: "wildcard",
+			apexReplacement:     "apex",
+			apexDomains:         []string{"example.com"},
+			outputs: []string{
+				"apex.example.com",
+				"foo.com",
+				"foo.example.com",
+				"wildcard.example.com",
+				"wildcard.foo.com",
+			},
+		},
+		{
+			name:                "wildcard and multiple apex domains",
+			wildcardReplacement: "wildcard",
+			apexReplacement:     "apex",
+			apexDomains:         []string{"example.com", "foo.com"},
+			outputs: []string{
+				"apex.example.com",
+				"apex.foo.com",
+				"foo.example.com",
+				"wildcard.example.com",
+				"wildcard.foo.com",
+			},
+		},
+		{
+			name:                "no wildcard and apex domain",
+			wildcardReplacement: "",
+			apexReplacement:     "apex",
+			apexDomains:         []string{"example.com"},
+			outputs: []string{
+				"apex.example.com",
+				"foo.com",
+				"foo.example.com",
+				"*.example.com",
+				"*.foo.com",
+			},
+		},
+		{
+			name:                "wildcard and apex domain, empty apex domain list",
+			wildcardReplacement: "wildcard",
+			apexReplacement:     "apex",
+			apexDomains:         []string{},
+			outputs: []string{
+				"example.com",
+				"foo.com",
+				"foo.example.com",
+				"wildcard.example.com",
+				"wildcard.foo.com",
+			},
+		},
+		{
+			name:                "no wildcard, no apex domain",
+			wildcardReplacement: "",
+			apexReplacement:     "",
+			apexDomains:         []string{"example.com"},
+			outputs: []string{
+				"example.com",
+				"foo.com",
+				"foo.example.com",
+				"*.example.com",
+				"*.foo.com",
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			replacer := newNameReplacer(tc.wildcardReplacement, tc.apexReplacement, tc.apexDomains)
+			for i, v := range testInputs {
+				assert.Equal(t, tc.outputs[i], replacer.replace(v))
+			}
+		})
+	}
+}

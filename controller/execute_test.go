@@ -162,6 +162,8 @@ func TestSelectRegistry(t *testing.T) {
 				TXTOwnerID:             "owner-id",
 				TXTCacheInterval:       60,
 				TXTWildcardReplacement: "wildcard",
+				TXTApexReplacement:     "apex",
+				TXTApexDomain:          []string{"apex.com"},
 				ManagedDNSRecordTypes:  []string{"A", "CNAME"},
 				ExcludeDNSRecordTypes:  []string{"TXT"},
 			},
